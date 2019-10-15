@@ -3,7 +3,7 @@ TAG=0.1
 
 .PHONY: download
 download:
-	curl
+	wget -P outputs https://storage.cloud.google.com/seldon-models/pytorch/moviesentiment_roberta/pytorch_model.bin
 
 .PHONY: build
 build:

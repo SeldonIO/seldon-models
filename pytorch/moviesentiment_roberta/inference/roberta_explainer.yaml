@@ -1,0 +1,41 @@
+apiVersion: machinelearning.seldon.io/v1alpha2
+kind: SeldonDeployment
+metadata:
+  name: roberta
+  namespace: default
+spec:
+  annotations:
+    seldon.io/engine-seldon-log-messages-externally: "true"
+    seldon.io/rest-read-timeout: "100000"
+  name: roberta
+  predictors:
+  - componentSpecs:
+    - spec:
+        containers:
+        - image: seldonio/movie_sentiment_roberta:0.1
+          name: roberta-default
+          resources:
+            limits:
+              cpu: "1"
+              memory: 2Gi
+            requests:
+              cpu: 100m
+              memory: 2Gi
+    explainer:
+      containerSpec:
+        name: ""
+        resources: {}
+      type: anchor_text
+    graph:
+      endpoint:
+        service_host: localhost
+        service_port: 9000
+        type: REST
+      implementation: UNKNOWN_IMPLEMENTATION
+      name: roberta-default
+      type: MODEL
+    labels:
+      version: default
+    name: default
+    replicas: 1
+    traffic: 100

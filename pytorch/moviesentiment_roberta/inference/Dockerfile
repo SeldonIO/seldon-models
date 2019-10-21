@@ -1,8 +1,10 @@
 FROM python:3.7
-COPY . /app
 WORKDIR /app
+COPY requirements.txt /app
 RUN pip install -r requirements.txt
 EXPOSE 5000
+
+COPY . /app
 
 # Define environment variable
 ENV MODEL_NAME MovieSentimentRoBERTa

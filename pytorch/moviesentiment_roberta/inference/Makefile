@@ -9,6 +9,10 @@ download:
 build:
 	docker build . -t seldonio/${MODEL_NAME}:${TAG}
 
+.PHONY: push_docker
+push_docker:
+	docker push seldonio/${MODEL_NAME}:${TAG}
+
 .PHONY: run_docker
 run_docker:
 	docker run --name ${MODEL_NAME} -d -p 5000:5000 seldonio/${MODEL_NAME}:${TAG}

@@ -17,7 +17,7 @@ spec:
           resources:
             limits:
               cpu: "1"
-              memory: 2Gi
+              memory: 5Gi
             requests:
               cpu: 100m
               memory: 2Gi
@@ -26,6 +26,13 @@ spec:
         name: ""
         resources: {}
       type: anchor_text
+      config:
+        threshold: "0.95"
+        use_similarity_proba: "True"
+        sample_proba: "0.5"
+        use_unk: "False"
+        top_n: "20"
+        temperature: ".2"
     graph:
       endpoint:
         service_host: localhost

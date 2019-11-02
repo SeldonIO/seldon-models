@@ -1,0 +1,34 @@
+apiVersion: "serving.kubeflow.org/v1alpha2"
+kind: "InferenceService"
+metadata:
+  name: roberta
+spec:
+  default:
+    predictor:
+      minReplicas: 1      
+      custom:
+        container:
+          image: seldonio/kf_movie_sentiment_roberta:0.1
+          resources:
+            requests:
+              cpu: 6
+              memory: 6Gi
+              nvidia.com/gpu: 1
+            limits:
+              cpu: 6
+              memory: 20Gi
+              nvidia.com/gpu: 1              
+    explainer:
+      minReplicas: 1      
+      alibi:
+        type: AnchorText
+        config:
+          threshold: "0.9"
+        resources:
+          requests:
+            cpu: 1
+            memory: 4Gi
+          limits:
+            cpu: 1
+            memory: 4Gi
+        

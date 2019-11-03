@@ -1,3 +1,11 @@
+# Need redoing with conda
+#conda install pytorch cpuonly -c pytorch
+#conda install -c anaconda scipy
+#conda install -c anaconda scikit-learn
+#pip install transformers
+#pip install seqeval
+#pip install tensorboardx
+#
 FROM python:3.7
 WORKDIR /app
 COPY requirements.txt /app

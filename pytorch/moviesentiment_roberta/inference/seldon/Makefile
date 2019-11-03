@@ -3,7 +3,8 @@ TAG=0.1
 
 .PHONY: download
 download:
-	wget -P outputs https://storage.cloud.google.com/seldon-models/pytorch/moviesentiment_roberta/pytorch_model.bin
+	mkdir -p outputs
+	curl -X GET -o outputs/pytorch_model.bin "https://storage.googleapis.com/seldon-models/pytorch/moviesentiment_roberta/pytorch_model.bin"
 
 .PHONY: build
 build:

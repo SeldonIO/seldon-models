@@ -1,0 +1,4 @@
+simpletransformers==0.4.0
+tensorboardX==1.9
+transformers==2.1.0
+azure-storage-blob==2.1.0

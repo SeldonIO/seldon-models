@@ -38,6 +38,7 @@ parser.add_argument('--protocol', type=Protocol, choices=list(Protocol),
                     default="tensorflow.http",
                     help='The protocol served by the model server')
 parser.add_argument('--reply_url', type=str, default="", help='URL to send reply cloudevent')
+parser.add_argument('--event-type', type=str, default="", help='e.g. io.seldon.serving.inference.outlier or org.kubeflow.serving.inference.outlier')
 args, _ = parser.parse_known_args()
 
 CESERVER_LOGLEVEL = os.environ.get('CESERVER_LOGLEVEL', 'INFO').upper()
@@ -46,7 +47,7 @@ logging.basicConfig(level=CESERVER_LOGLEVEL)
 
 class CEServer(object):
     def __init__(self, protocol: Protocol = args.protocol, http_port: int = args.http_port,
-                 reply_url: str = args.reply_url):
+                 reply_url: str = args.reply_url, event_type: str = args.event_type):
         """
         CloudEvents server
 
@@ -58,18 +59,21 @@ class CEServer(object):
              http port to listen on
         reply_url
              reply url to send response event
+        event_type
+             type of event being handled (for req logging purposes)
         """
         self.registered_model: CEModel = None
         self.http_port = http_port
         self.protocol = protocol
         self.reply_url = reply_url
         self._http_server: Optional[tornado.httpserver.HTTPServer] = None
+        self.event_type = event_type
 
     def create_application(self):
         return tornado.web.Application([
             # Outlier detector
             (r"/", EventHandler,
-             dict(protocol=self.protocol, model=self.registered_model, reply_url=self.reply_url)),
+             dict(protocol=self.protocol, model=self.registered_model, reply_url=self.reply_url, event_type=self.event_type)),
             # Protocol Discovery API that returns the serving protocol supported by this server.
             (r"/protocol", ProtocolHandler, dict(protocol=self.protocol)),
             # Prometheus Metrics API that returns metrics for model servers

@@ -156,7 +156,7 @@ def sendCloudEvent(event: v02.Event, url: str):
 
 class EventHandler(tornado.web.RequestHandler):
 
-    def initialize(self, protocol: str, model: CEModel, reply_url: str):
+    def initialize(self, protocol: str, model: CEModel, reply_url: str, event_type: str):
         """
         Event Handler
 
@@ -173,6 +173,7 @@ class EventHandler(tornado.web.RequestHandler):
         self.protocol = protocol
         self.model = model
         self.reply_url = reply_url
+        self.event_type = event_type
 
     def post(self):
         """

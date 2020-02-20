@@ -38,7 +38,7 @@ parser.add_argument('--protocol', type=Protocol, choices=list(Protocol),
                     default="tensorflow.http",
                     help='The protocol served by the model server')
 parser.add_argument('--reply_url', type=str, default="", help='URL to send reply cloudevent')
-parser.add_argument('--event-type', type=str, default="", help='e.g. io.seldon.serving.inference.outlier or org.kubeflow.serving.inference.outlier')
+parser.add_argument('--event_type', type=str, default="", help='e.g. io.seldon.serving.inference.outlier or org.kubeflow.serving.inference.outlier')
 args, _ = parser.parse_known_args()
 
 CESERVER_LOGLEVEL = os.environ.get('CESERVER_LOGLEVEL', 'INFO').upper()
@@ -168,7 +168,8 @@ class EventHandler(tornado.web.RequestHandler):
              The model to use
         reply_url
              The reply url to send model responses
-
+        event_type
+             The CE event type to be sent
         """
         self.protocol = protocol
         self.model = model

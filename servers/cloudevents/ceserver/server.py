@@ -227,7 +227,8 @@ class EventHandler(tornado.web.RequestHandler):
                     SetData(responseStr).
                     SetEventID(resp_event_id).
                     SetSource(self.model.event_source()).
-                    SetEventType(self.event_type)
+                    SetEventType(self.event_type).
+                    SetExtensions(event.Extensions())
             )
             logging.debug(json.dumps(revent.Properties()))
             sendCloudEvent(revent, self.reply_url)

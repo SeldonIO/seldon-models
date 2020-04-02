@@ -4,7 +4,9 @@ from typing import Dict, List
 
 import numpy as np
 import tornado
-from ceserver.protocols.request_handler import RequestHandler  # pylint: disable=no-name-in-module
+from ceserver.protocols.request_handler import (
+    RequestHandler,
+)  # pylint: disable=no-name-in-module
 
 
 class SeldonPayload(Enum):
@@ -16,8 +18,9 @@ class SeldonPayload(Enum):
 def _extract_list(body: Dict) -> List:
     data_def = body["data"]
     if "tensor" in data_def:
-        arr = np.array(data_def.get("tensor").get("values")) \
-            .reshape(data_def.get("tensor").get("shape"))
+        arr = np.array(data_def.get("tensor").get("values")).reshape(
+            data_def.get("tensor").get("shape")
+        )
         return arr.tolist()
     elif "ndarray" in data_def:
         return data_def.get("ndarray")
@@ -35,10 +38,7 @@ def _extract_list(body: Dict) -> List:
 def _create_seldon_data_def(array: np.array, ty: SeldonPayload):
     datadef = {}
     if ty == SeldonPayload.TENSOR:
-        datadef["tensor"] = {
-            "shape": array.shape,
-            "values": array.ravel().tolist()
-        }
+        datadef["tensor"] = {"shape": array.shape, "values": array.ravel().tolist()}
     elif ty == SeldonPayload.NDARRAY:
         datadef["ndarray"] = array.tolist()
     elif ty == SeldonPayload.TFTENSOR:
@@ -49,7 +49,8 @@ def _create_seldon_data_def(array: np.array, ty: SeldonPayload):
 
 
 def _get_request_ty(
-        request: Dict) -> SeldonPayload:  # pylint: disable=inconsistent-return-statements
+    request: Dict
+) -> SeldonPayload:  # pylint: disable=inconsistent-return-statements
     data_def = request["data"]
     if "tensor" in data_def:
         return SeldonPayload.TENSOR
@@ -67,7 +68,6 @@ def create_request(arr: np.ndarray, ty: SeldonPayload) -> Dict:
 
 
 class SeldonRequestHandler(RequestHandler):
-
     def __init__(self, request: Dict):  # pylint: disable=useless-super-delegation
         super().__init__(request)
 
@@ -75,13 +75,17 @@ class SeldonRequestHandler(RequestHandler):
         if not "data" in self.request:
             raise tornado.web.HTTPError(
                 status_code=HTTPStatus.BAD_REQUEST,
-                reason="Expected key \"data\" in request body"
+                reason='Expected key "data" in request body',
             )
         ty = _get_request_ty(self.request)
-        if not (ty == SeldonPayload.TENSOR or ty == SeldonPayload.NDARRAY or ty == SeldonPayload.TFTENSOR):
+        if not (
+            ty == SeldonPayload.TENSOR
+            or ty == SeldonPayload.NDARRAY
+            or ty == SeldonPayload.TFTENSOR
+        ):
             raise tornado.web.HTTPError(
                 status_code=HTTPStatus.BAD_REQUEST,
-                reason="\"data\" key should contain either \"tensor\",\"ndarray\", or \"tftensor\""
+                reason='"data" key should contain either "tensor","ndarray", or "tftensor"',
             )
 
     def extract_request(self) -> List:

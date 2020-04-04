@@ -1,8 +1,6 @@
 from ceserver.server import Protocol, CEServer, CEModel
-from tornado.testing import AsyncTestCase, gen_test, AsyncHTTPTestCase
-from tornado.httpserver import HTTPRequest
+from tornado.testing import AsyncHTTPTestCase
 from typing import List, Dict
-import numpy as np
 import json
 import requests_mock
 

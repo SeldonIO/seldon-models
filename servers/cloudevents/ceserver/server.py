@@ -256,28 +256,29 @@ class EventHandler(tornado.web.RequestHandler):
             headers[key] = val
 
         response = self.model.process_event(request, headers)
-        responseStr = json.dumps(response)
 
-        # Create event from response if reply_url is active
-        if not self.reply_url == "":
-            if event.EventID() is None or event.EventID() == "":
-                resp_event_id = uuid.uuid1().hex
-            else:
-                resp_event_id = event.EventID()
-            revent = (
-                v02.Event()
-                .SetContentType("application/json")
-                .SetData(responseStr)
-                .SetEventID(resp_event_id)
-                .SetSource(self.event_source)
-                .SetEventType(self.event_type)
-                .SetExtensions(event.Extensions())
-            )
-            logging.debug(json.dumps(revent.Properties()))
-            sendCloudEvent(revent, self.reply_url)
+        if response is not None:
+            responseStr = json.dumps(response)
 
-        self.write(json.dumps(response))
+            # Create event from response if reply_url is active
+            if not self.reply_url == "":
+                if event.EventID() is None or event.EventID() == "":
+                    resp_event_id = uuid.uuid1().hex
+                else:
+                    resp_event_id = event.EventID()
+                revent = (
+                    v02.Event()
+                        .SetContentType("application/json")
+                        .SetData(responseStr)
+                        .SetEventID(resp_event_id)
+                        .SetSource(self.event_source)
+                        .SetEventType(self.event_type)
+                        .SetExtensions(event.Extensions())
+                )
+                logging.debug(json.dumps(revent.Properties()))
+                sendCloudEvent(revent, self.reply_url)
 
+            self.write(json.dumps(response))
 
 class LivenessHandler(tornado.web.RequestHandler):
     def get(self):

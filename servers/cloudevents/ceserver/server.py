@@ -32,22 +32,46 @@ class Protocol(Enum):
 
 
 parser = argparse.ArgumentParser(add_help=False)
-parser.add_argument('--http_port', default=DEFAULT_HTTP_PORT, type=int,
-                    help='The HTTP Port listened to by the model server.')
-parser.add_argument('--protocol', type=Protocol, choices=list(Protocol),
-                    default="tensorflow.http",
-                    help='The protocol served by the model server')
-parser.add_argument('--reply_url', type=str, default="", help='URL to send reply cloudevent')
-parser.add_argument('--event_type', type=str, default="", help='e.g. io.seldon.serving.inference.outlier or org.kubeflow.serving.inference.outlier')
+parser.add_argument(
+    "--http_port",
+    default=DEFAULT_HTTP_PORT,
+    type=int,
+    help="The HTTP Port listened to by the model server.",
+)
+parser.add_argument(
+    "--protocol",
+    type=Protocol,
+    choices=list(Protocol),
+    default="tensorflow.http",
+    help="The protocol served by the model server",
+)
+parser.add_argument(
+    "--reply_url", type=str, default="", help="URL to send reply cloudevent"
+)
+parser.add_argument(
+    "--event_source", type=str, default="", help="URI of the event source"
+)
+parser.add_argument(
+    "--event_type",
+    type=str,
+    default="",
+    help="e.g. io.seldon.serving.inference.outlier or org.kubeflow.serving.inference.outlier",
+)
 args, _ = parser.parse_known_args()
 
-CESERVER_LOGLEVEL = os.environ.get('CESERVER_LOGLEVEL', 'INFO').upper()
+CESERVER_LOGLEVEL = os.environ.get("CESERVER_LOGLEVEL", "INFO").upper()
 logging.basicConfig(level=CESERVER_LOGLEVEL)
 
 
 class CEServer(object):
-    def __init__(self, protocol: Protocol = args.protocol, http_port: int = args.http_port,
-                 reply_url: str = args.reply_url, event_type: str = args.event_type):
+    def __init__(
+        self,
+        protocol: Protocol = args.protocol,
+        http_port: int = args.http_port,
+        reply_url: str = args.reply_url,
+        event_type: str = args.event_type,
+        event_source: str = args.event_source,
+    ):
         """
         CloudEvents server
 
@@ -62,23 +86,35 @@ class CEServer(object):
         event_type
              type of event being handled (for req logging purposes)
         """
-        self.registered_model: CEModel = None
+        self.registered_model: Optional[CEModel] = None
         self.http_port = http_port
         self.protocol = protocol
         self.reply_url = reply_url
         self._http_server: Optional[tornado.httpserver.HTTPServer] = None
         self.event_type = event_type
+        self.event_source = event_source
 
     def create_application(self):
-        return tornado.web.Application([
-            # Outlier detector
-            (r"/", EventHandler,
-             dict(protocol=self.protocol, model=self.registered_model, reply_url=self.reply_url, event_type=self.event_type)),
-            # Protocol Discovery API that returns the serving protocol supported by this server.
-            (r"/protocol", ProtocolHandler, dict(protocol=self.protocol)),
-            # Prometheus Metrics API that returns metrics for model servers
-            (r"/v1/metrics", MetricsHandler, dict(model=self.registered_model)),
-        ])
+        return tornado.web.Application(
+            [
+                # Outlier detector
+                (
+                    r"/",
+                    EventHandler,
+                    dict(
+                        protocol=self.protocol,
+                        model=self.registered_model,
+                        reply_url=self.reply_url,
+                        event_type=self.event_type,
+                        event_source=self.event_source,
+                    ),
+                ),
+                # Protocol Discovery API that returns the serving protocol supported by this server.
+                (r"/protocol", ProtocolHandler, dict(protocol=self.protocol)),
+                # Prometheus Metrics API that returns metrics for model servers
+                (r"/v1/metrics", MetricsHandler, dict(model=self.registered_model)),
+            ]
+        )
 
     def start(self, model: CEModel):
         """
@@ -141,22 +177,27 @@ def sendCloudEvent(event: v02.Event, url: str):
     """
     http_marshaller = marshaller.NewDefaultHTTPMarshaller()
     binary_headers, binary_data = http_marshaller.ToRequest(
-        event, converters.TypeBinary, json.dumps)
+        event, converters.TypeBinary, json.dumps
+    )
 
     print("binary CloudEvent")
     for k, v in binary_headers.items():
         print("{0}: {1}\r\n".format(k, v))
     print(binary_data)
 
-    response = requests.post(url,
-                             headers=binary_headers,
-                             data=binary_data)
+    response = requests.post(url, headers=binary_headers, data=binary_data)
     response.raise_for_status()
 
 
 class EventHandler(tornado.web.RequestHandler):
-
-    def initialize(self, protocol: str, model: CEModel, reply_url: str, event_type: str):
+    def initialize(
+        self,
+        protocol: str,
+        model: CEModel,
+        reply_url: str,
+        event_type: str,
+        event_source: str,
+    ):
         """
         Event Handler
 
@@ -170,11 +211,14 @@ class EventHandler(tornado.web.RequestHandler):
              The reply url to send model responses
         event_type
              The CE event type to be sent
+        event_source
+             The CE event source
         """
         self.protocol = protocol
         self.model = model
         self.reply_url = reply_url
         self.event_type = event_type
+        self.event_source = event_source
 
     def post(self):
         """
@@ -189,7 +233,7 @@ class EventHandler(tornado.web.RequestHandler):
         except json.decoder.JSONDecodeError as e:
             raise tornado.web.HTTPError(
                 status_code=HTTPStatus.BAD_REQUEST,
-                reason="Unrecognized request format: %s" % e
+                reason="Unrecognized request format: %s" % e,
             )
 
         # Extract payload from request
@@ -201,40 +245,40 @@ class EventHandler(tornado.web.RequestHandler):
         event = v02.Event()
         http_marshaller = marshaller.NewDefaultHTTPMarshaller()
         event = http_marshaller.FromRequest(
-            event, self.request.headers, self.request.body, json.loads)
+            event, self.request.headers, self.request.body, json.loads
+        )
         logging.debug(json.dumps(event.Properties()))
 
         # Extract any desired request headers
         headers = {}
-        for header in self.model.headers():
-            value = self.request.headers.get(header)
-            if value is not None:
-                headers[header] = value
 
-        transformed = self.model.transform(request)
-        response = self.model.process_event(transformed, headers)
-        responseStr = json.dumps(response)
+        for (key, val) in self.request.headers.get_all():
+            headers[key] = val
 
-        # Create event from response if reply_url is active
-        if not self.reply_url == "":
-            if event.EventID() is None or event.EventID() == "":
-                resp_event_id = uuid.uuid1().hex
-            else:
-                resp_event_id = event.EventID()
-            revent = (
-                v02.Event().
-                    SetContentType("application/json").
-                    SetData(responseStr).
-                    SetEventID(resp_event_id).
-                    SetSource(self.model.event_source()).
-                    SetEventType(self.event_type).
-                    SetExtensions(event.Extensions())
-            )
-            logging.debug(json.dumps(revent.Properties()))
-            sendCloudEvent(revent, self.reply_url)
+        response = self.model.process_event(request, headers)
 
-        self.write(json.dumps(response))
+        if response is not None:
+            responseStr = json.dumps(response)
 
+            # Create event from response if reply_url is active
+            if not self.reply_url == "":
+                if event.EventID() is None or event.EventID() == "":
+                    resp_event_id = uuid.uuid1().hex
+                else:
+                    resp_event_id = event.EventID()
+                revent = (
+                    v02.Event()
+                        .SetContentType("application/json")
+                        .SetData(responseStr)
+                        .SetEventID(resp_event_id)
+                        .SetSource(self.event_source)
+                        .SetEventType(self.event_type)
+                        .SetExtensions(event.Extensions())
+                )
+                logging.debug(json.dumps(revent.Properties()))
+                sendCloudEvent(revent, self.reply_url)
+
+            self.write(json.dumps(response))
 
 class LivenessHandler(tornado.web.RequestHandler):
     def get(self):

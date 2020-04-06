@@ -1,2 +1,2 @@
 from .model import CEModel
-from .server import CEServer
+from .server import CEServer, EventHandler
